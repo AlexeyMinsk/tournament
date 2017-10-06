@@ -7,7 +7,7 @@ class Tournament{
 		this.objList = {};
 		this.freeze = false;
 	}
-	
+
 	initTournament(){
 		
 		this.objList = this.randomizator(this.list);
@@ -23,6 +23,7 @@ class Tournament{
 					document.body.addEventListener('click', addPointer);
 			}
 		});
+		//document
 		
 		function addPointer(event){
 			
@@ -43,11 +44,9 @@ class Tournament{
 				
 				if(event.key == 'Enter'){
 					document.body.addEventListener('click', addPointer);
-					let tr = event.target.parentNode.closest('tr');
 					let value = event.target.value;
 					if( value == 0 || value == 1 || value == 2)	{
-						event.target.parentNode.textContent = value;
-						tr.lastChild.textContent = sumPoints(tr);
+                        autoComplite(event.target.parentNode, value);
 					}else{
 						let textarea = document.querySelector('.group textarea');
 						textarea.parentNode.removeChild(textarea);
@@ -55,7 +54,53 @@ class Tournament{
 				}else
 					return;
 			}
-			
+
+			function saveTournament() {
+
+				let body = get_JSON_table();
+
+				let xhr = new XMLHttpRequest();
+                xhr.upload.onprogress = function(event) {
+                    console.log( 'Загружено на сервер ' + event.loaded + ' байт из ' + event.total );
+                }
+
+                xhr.upload.onload = function() {
+                    console.log( 'Данные полностью загружены на сервер!' );
+                }
+
+                xhr.upload.onerror = function() {
+                    console.log( 'Произошла ошибка при загрузке данных на сервер!' );
+                }
+                xhr.open('POST', 'save.php');
+                xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+                xhr.send(body);
+
+
+                function get_JSON_table(){
+
+                	const size = 6;
+                	let json = {};
+
+                	let groups = document.querySelectorAll('.group');
+
+                	for(let i = 0; i < groups.length; i++){
+
+                		let group = groups[i];
+
+                        for(let tr = 2; tr <= size; tr++){
+
+                            let name = group.childNodes[tr].dataset.id;
+                            json[name] = [];
+
+                            for(let td = 1; td < size; td++){
+                                json[name].push(group.childNodes[tr].childNodes[td].textContent);
+                            }
+						}
+					}
+					return JSON.stringify(json);
+				}
+            }
+
 			function sumPoints(tr){
 				
 				let sum = 0;
@@ -65,8 +110,22 @@ class Tournament{
 					if(tr.childNodes[i].textContent != '')
 						sum += +tr.childNodes[i].textContent;
 				}
+                saveTournament();
 				return sum;
 			}
+
+			function autoComplite(cell, value) {
+
+                cell.textContent = value;
+                let cellIndex = cell.cellIndex;
+                let rowIndex = cell.parentNode.rowIndex;
+                let cellTwo = cell.closest('table').rows[cellIndex].cells[rowIndex];
+                cellTwo.textContent = 2 - value;
+                let tr = cell.closest('tr');
+                let trTwo = cellTwo.closest('tr');
+                tr.lastChild.textContent = sumPoints(tr);
+                trTwo.lastChild.textContent = sumPoints(trTwo);
+            }
 		}
 	}
 	
